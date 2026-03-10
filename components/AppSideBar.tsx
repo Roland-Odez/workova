@@ -12,11 +12,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { CaretDownIcon, CaretRightIcon, CheckIcon, PlusIcon} from '@phosphor-icons/react'
-import { IoCheckboxOutline } from "react-icons/io5";
+import { CaretDownIcon, CheckIcon, PlusIcon} from '@phosphor-icons/react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import Image from "next/image"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible"
 import { MdSpaceDashboard } from "react-icons/md";
 import { FaFolderOpen } from "react-icons/fa";
 import { FaUserGroup } from "react-icons/fa6";

@@ -3,6 +3,9 @@
 // import "" from "./"".svg";
 // import '' from "./''.svg";
 
+import { User } from "@/types/user"
+import { Workspace } from "@/types/workspace"
+
 // export const assets = {
 //     workspace_img_default,
 //     "",
@@ -10,7 +13,7 @@
 //     // '',
 // }
 
-export const dummyUsers = [
+export const dummyUsers: User[] = [
     {
         "id": "user_1",
         "name": "Alex Smith",
@@ -37,7 +40,7 @@ export const dummyUsers = [
     }
 ]
 
-export const dummyWorkspaces = [
+export const dummyWorkspaces: Workspace[] = [
     {
         "id": "org_1",
         "name": "Corp Workspace",
