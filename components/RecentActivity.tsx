@@ -37,7 +37,7 @@ const RecentActivity = () => {
     }, [projects]);
 
     return (
-        <div className="bg-white dark:bg-zinc-950 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-lg transition-all overflow-hidden">
+        <div className="bg-white dark:bg-zinc-950 dark:bg-linear-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-lg transition-all overflow-hidden">
             <div className="border-b border-zinc-200 dark:border-zinc-800 p-4">
                 <h2 className="text-lg text-zinc-800 dark:text-zinc-200">Recent Activity</h2>
             </div>

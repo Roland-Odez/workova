@@ -5,8 +5,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -66,7 +64,7 @@ export function AppSidebar() {
                       <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">1 workspace</p>
                     </div>
                   </div>
-                  <CheckIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <CheckIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 </DropdownMenuItem>
                 <hr className="border-gray-200 dark:border-zinc-700 mt-2" />
 
@@ -86,7 +84,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup className="gap-2.5 py-2">
           {menuItems.map((item) => (
-              <Link href={item.href} key={item.name} className={`flex items-center gap-3 py-3 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all  ${pathname === item.href ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-800/50  dark:ring-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'}`} >
+              <Link href={item.href} key={item.name} className={`flex items-center gap-3 py-3 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all  ${pathname === item.href ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-linear-to-br dark:from-zinc-800 dark:to-zinc-800/50  dark:ring-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'}`} >
                   <item.icon size={16} />
                   <p className='text-sm truncate'>{item.name}</p>
               </Link>
