@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { LuKanban, LuChartBar, LuCalendar, LuSettings } from "react-icons/lu";
-import { CaretDownIcon, CaretRightIcon, CheckIcon, PlusIcon} from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { dummyWorkspaces } from '@/public/assets/dummyData';
@@ -15,10 +14,10 @@ const ProjectSidebar = () => {
     const projects = dummyWorkspaces[0].projects
 
     const getProjectSubItems = (projectId: string) => [
-        { title: 'Tasks', icon: LuKanban, url: `/projectsDetail?id=${projectId}&tab=tasks` },
-        { title: 'Analytics', icon: LuChartBar , url: `/projectsDetail?id=${projectId}&tab=analytics` },
-        { title: 'Calendar', icon: LuCalendar, url: `/projectsDetail?id=${projectId}&tab=calendar` },
-        { title: 'Settings', icon: LuSettings, url: `/projectsDetail?id=${projectId}&tab=settings` }
+        { title: 'Tasks', icon: LuKanban, url: `/project-detail?id=${projectId}&tab=tasks` },
+        { title: 'Analytics', icon: LuChartBar , url: `/project-detail?id=${projectId}&tab=analytics` },
+        { title: 'Calendar', icon: LuCalendar, url: `/project-detail?id=${projectId}&tab=calendar` },
+        { title: 'Settings', icon: LuSettings, url: `/project-detail?id=${projectId}&tab=settings` }
     ];
 
     const toggleProject = (id: string) => {

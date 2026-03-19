@@ -1,9 +1,8 @@
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { setTheme, toggleTheme } from "@/lib/features/theme/themeSlice"
+import { setTheme } from "@/lib/features/theme/themeSlice"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
-import { applyTheme } from "@/lib/utils"
 import { Moon, Search, Sun } from 'lucide-react'
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group"
 

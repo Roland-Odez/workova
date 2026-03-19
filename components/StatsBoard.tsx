@@ -2,7 +2,7 @@
 
 import { dummyWorkspaces } from '@/public/assets/dummyData';
 import { AlertTriangle, CheckCircle, FolderOpen, Users } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const currentWorkspace = dummyWorkspaces[0]
 

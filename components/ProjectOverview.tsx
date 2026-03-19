@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Calendar, UsersIcon, FolderOpen } from "lucide-react";
 import { format } from "date-fns";
-// import CreateProjectDialog from "./CreateProjectDialog";
 import Link from "next/link";
 import { dummyWorkspaces } from "@/public/assets/dummyData";
-import { Workspace } from "@/types/workspace";
 import { Project } from "@/types/project";
+import CreateProjectDialog from "./CreateProjectDialog";
 
 const ProjectOverview = () => {
     const statusColors: any = {
@@ -25,8 +24,6 @@ const ProjectOverview = () => {
     };
 
     const currentWorkspace = dummyWorkspaces[0]
-
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [projects, setProjects] = useState<Project[]| []>([]);
 
     useEffect(() => {
@@ -49,15 +46,12 @@ const ProjectOverview = () => {
                             <FolderOpen size={32} />
                         </div>
                         <p className="text-zinc-600 dark:text-zinc-400">No projects yet</p>
-                        <button onClick={() => setIsDialogOpen(true)} className="mt-4 px-4 py-2 text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white dark:text-zinc-200 rounded hover:opacity-90 transition">
-                            Create your First Project
-                        </button>
-                        {/* <CreateProjectDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} /> */}
+                        <CreateProjectDialog />
                     </div>
                 ) : (
                     <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
                         {projects.slice(0, 5).map((project:any) => (
-                            <Link key={project.id} href={`/projectsDetail?id=${project.id}&tab=tasks`} className="block p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
+                            <Link key={project.id} href={`/project-detail?id=${project.id}&tab=tasks`} className="block p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
                                         <h3 className="font-semibold text-zinc-800 dark:text-zinc-300 mb-1">

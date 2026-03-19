@@ -18,7 +18,7 @@ export const dummyUsers: User[] = [
         "id": "user_1",
         "name": "Alex Smith",
         "email": "alexsmith@example.com",
-        "image": "",
+        "image": "https://github.com/shadcn.png",
         "createdAt": "2025-10-06T11:04:03.485Z",
         "updatedAt": "2025-10-06T11:04:03.485Z"
     },
@@ -26,7 +26,7 @@ export const dummyUsers: User[] = [
         "id": "user_2",
         "name": "John Warrel",
         "email": "johnwarrel@example.com",
-        "image": '',
+        "image": 'https://github.com/shadcn.png',
         "createdAt": "2025-10-09T13:20:24.360Z",
         "updatedAt": "2025-10-09T13:20:24.360Z"
     },
@@ -34,7 +34,7 @@ export const dummyUsers: User[] = [
         "id": "user_3",
         "name": "Oliver Watts",
         "email": "oliverwatts@example.com",
-        "image": "",
+        "image": "https://github.com/shadcn.png",
         "createdAt": "2025-09-01T04:31:22.043Z",
         "updatedAt": "2025-09-26T09:03:37.866Z"
     }

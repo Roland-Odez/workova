@@ -24,7 +24,7 @@ import ProjectSidebar from "./ProjectSidebar";
 const menuItems = [
         { name: 'Dashboard', href: '/', icon: MdSpaceDashboard },
         { name: 'Projects', href: '/projects', icon: FaFolderOpen },
-        { name: 'Team', href: '/team', icon: FaUserGroup },
+        { name: 'Teams', href: '/teams', icon: FaUserGroup },
     ]
 
 export function AppSidebar() {
@@ -82,9 +82,9 @@ export function AppSidebar() {
       <hr className="border-gray-200 dark:border-zinc-700 mt-2" />
       {/* body */}
       <SidebarContent>
-        <SidebarGroup className="gap-2.5 py-2">
+        <SidebarGroup className="gap-2 py-2">
           {menuItems.map((item) => (
-              <Link href={item.href} key={item.name} className={`flex items-center gap-3 py-3 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all  ${pathname === item.href ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-linear-to-br dark:from-zinc-800 dark:to-zinc-800/50  dark:ring-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'}`} >
+              <Link href={item.href} key={item.name} className={`flex items-center gap-3 py-2 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all  ${pathname === item.href ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-linear-to-br dark:from-zinc-800 dark:to-zinc-800/50  dark:ring-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'}`} >
                   <item.icon size={16} />
                   <p className='text-sm truncate'>{item.name}</p>
               </Link>

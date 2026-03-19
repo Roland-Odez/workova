@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { dummyWorkspaces } from '@/public/assets/dummyData'
 import { Project } from '@/types/project'
 import { FolderOpen, Search } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const Projects = () => {
     const projects = dummyWorkspaces[0].projects

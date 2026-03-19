@@ -1,4 +1,5 @@
 import { Comment } from "."
+import { User } from "./user"
 
 export type Task = {
   id: string
@@ -9,7 +10,7 @@ export type Task = {
   type: "FEATURE" | "BUG" | "TASK" | "IMPROVEMENT"
   priority: "LOW" | "MEDIUM" | "HIGH"
   assigneeId: string
-  due_date: string
+  due_date: string|Date|number
   createdAt: string
   updatedAt: string
   assignee: User
