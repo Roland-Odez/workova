@@ -1,4 +1,5 @@
 import { Priority, ProjectMember, ProjectStatus } from "."
+import { Task } from "./task"
 
 export type Project = {
   id: string

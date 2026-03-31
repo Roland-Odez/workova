@@ -7,7 +7,7 @@ export type Workspace = {
   name: string
   slug: string
   description: string | null
-  settings: Record<string, unknown>
+  settings?: Record<string, unknown>
   ownerId: string
   createdAt: string
   updatedAt: string
