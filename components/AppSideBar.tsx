@@ -20,6 +20,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import TaskSidebar from "./TaskSidebar";
 import ProjectSidebar from "./ProjectSidebar";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
+import { useEffect, useMemo } from "react"
+import { selectWorkspace, storeSelectedWorkspaceId, WorkspaceType } from "@/lib/features/worskspace/workspaceSlice"
 
 const menuItems = [
         { name: 'Dashboard', href: '/', icon: MdSpaceDashboard },
@@ -31,6 +34,25 @@ export function AppSidebar() {
 
   const pathname = usePathname()
 
+    const {workspaces, selectedWorkspace} = useAppSelector((state) => state.workspace)
+    const dispatch = useAppDispatch()
+
+    const workspaceToSelect = useMemo(() => {
+      return workspaces?.filter(ws => ws.id !== selectedWorkspace?.id);
+    }, [workspaces, selectedWorkspace]);
+
+    const handleWorkspaceSelection = (workspace: WorkspaceType) => {
+      dispatch(selectWorkspace(workspace));
+    }
+
+    useEffect(() => {
+      if (!selectedWorkspace?.id) {
+        return;
+      }
+
+      storeSelectedWorkspaceId(selectedWorkspace.id);
+    }, [selectedWorkspace]);
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -41,11 +63,14 @@ export function AppSidebar() {
                 <SidebarMenuButton className="rounded-sm p-4 py-7">
                   <div className="flex gap-2">
                     <div className="h-9 w-9" >
-                      <Image src={'/favicon.ico'} alt="workspace image" className="object-cover block" width={100} height={100}  />
+                      {
+                        selectedWorkspace && 
+                        <Image src={selectedWorkspace?.image_url as string || '/favicon.ico'} alt="workspace image" className="object-cover block rounded-full" width={100} height={100}  />
+                      }
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-800 dark:text-white text-sm truncate">ai-org</p>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">1 workspace</p>
+                      <p className="font-semibold text-gray-800 dark:text-white text-sm truncate">{selectedWorkspace?.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">{workspaces?.length} workspace</p>
                     </div>
                   </div>
                   <CaretDownIcon className="ml-auto" />
@@ -54,24 +79,47 @@ export function AppSidebar() {
 
               <DropdownMenuContent className="w-64 p-3">
                 <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-2 px-2">Workspaces</p>
-                <DropdownMenuItem className="flex justify-between">
-                  <div className="flex gap-2">
-                    <div className="h-8 w-8" >
-                      <Image src={'/favicon.ico'} alt="workspace image" className="object-cover block" width={100} height={100}  />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800 dark:text-white text-sm truncate">ai-org</p>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">1 workspace</p>
-                    </div>
-                  </div>
-                  <CheckIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                </DropdownMenuItem>
+                {
+                  <DropdownMenuItem className="flex justify-between" id={selectedWorkspace?.id}>
+                      <div className="flex gap-2">
+                        <div className="h-8 w-8" >
+                          <Image src={selectedWorkspace?.image_url as string || '/favicon.ico'} alt="workspace image" className="object-cover block rounded-full" width={100} height={100}  />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800 dark:text-white text-sm truncate">{selectedWorkspace?.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">{workspaces?.length} workspace</p>
+                        </div>
+                      </div>
+                      <CheckIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    </DropdownMenuItem>
+                }
+                {
+                  workspaceToSelect && 
+                  workspaceToSelect?.map((w) => (
+                    <DropdownMenuItem className="flex justify-between" id={w.id} onClick={() => handleWorkspaceSelection(w)} key={w?.id}>
+                      <div className="flex gap-2">
+                        <div className="h-8 w-8" >
+                          {
+                            w.image_url &&
+                            <Image src={w.image_url || '/favicon.ico'} alt="workspace image" className="object-cover block rounded-full" width={100} height={100}  />
+                          }
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800 dark:text-white text-sm truncate">{w.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">{workspaces?.length} workspace</p>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                }
                 <hr className="border-gray-200 dark:border-zinc-700 mt-2" />
 
                 <div className="p-2 cursor-pointer rounded group hover:bg-gray-100 dark:hover:bg-zinc-800" >
+                  <Link href={'/create-workspace'}>
                     <p className="flex items-center text-xs gap-2 my-1 w-full text-blue-600 dark:text-blue-400 group-hover:text-blue-500 dark:group-hover:text-blue-300">
                         <PlusIcon className="w-4 h-4" /> Create Workspace
                     </p>
+                  </Link>
                 </div>
               </DropdownMenuContent>
 

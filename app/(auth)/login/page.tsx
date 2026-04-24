@@ -1,9 +1,16 @@
-import React from 'react'
+import { getAuthContext } from "@/lib/auth";
 
-const Login = () => {
-  return (
-    <div>Login</div>
-  )
-}
+import LoginForm from "./LoginForm";
+import { redirect } from "next/navigation";
 
-export default Login
+const LoginPage = async () => {
+  const context = await getAuthContext();
+  
+    if (!context.isAuthenticated) {
+      redirect('/')
+    }
+
+  return <LoginForm />;
+};
+
+export default LoginPage;

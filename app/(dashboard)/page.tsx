@@ -3,13 +3,15 @@ import ProjectOverview from '@/components/ProjectOverview'
 import RecentActivity from '@/components/RecentActivity'
 import StatsBoard from '@/components/StatsBoard'
 import TasksSummary from '@/components/TaskSummary'
+import { getNeonSignedUser } from '../actions/user'
 
-const Dashboard = () => {
+const Dashboard = async () => {
+    const user = await getNeonSignedUser()
   return (
     <div>
         <section className='flex items-center justify-between'>
             <div>
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1"> Welcome back, Roland </h1>
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1"> Welcome back, {user.user?.name} </h1>
                 <p className="text-gray-500 dark:text-zinc-400 text-sm"> Here's what's happening with your projects today </p>
             </div>
 

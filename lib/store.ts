@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit'
 import ThemeReducer from '@/lib/features/theme/themeSlice'
+import WorkspaceReducer from '@/lib/features/worskspace/workspaceSlice'
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
-        theme: ThemeReducer
+        theme: ThemeReducer,
+        workspace: WorkspaceReducer
     }
   })
 }
