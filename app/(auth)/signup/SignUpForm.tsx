@@ -66,8 +66,8 @@ const SignUpForm = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 px-4 py-10 dark:bg-zinc-950">
-      <div className="flex w-full max-w-sm flex-col items-center justify-center rounded-3xl bg-white shadow-xl shadow-black/10 dark:bg-zinc-900 dark:shadow-black/30">
+    <div className="auth-page-background flex min-h-screen w-full items-center justify-center px-4 py-10">
+      <div className="flex w-full max-w-sm flex-col items-center justify-center rounded-3xl border border-white/70 bg-white shadow-xl shadow-black/10 dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-black/30">
         <div className="flex h-fit w-full flex-col items-center gap-3 rounded-tl-md rounded-tr-md rounded-br-3xl rounded-bl-3xl bg-white p-6 shadow-lg dark:bg-zinc-900">
           <div className="flex flex-col items-center">
             <h1 className="text-base font-bold text-zinc-950 dark:text-zinc-50">Sign up to Workova</h1>

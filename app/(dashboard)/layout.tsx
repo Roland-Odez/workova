@@ -5,8 +5,8 @@ import { AppSidebar } from "@/components/AppSideBar";
 import Navbar from "@/components/Navbar";
 import { requireAuthenticatedAppAccess } from "@/lib/auth";
 import WorkspaceHydrator from "@/lib/features/worskspace/WorkspaceHydrator";
-import { getNeonSignedUser } from "../actions/user";
-import { getUserWorkspaces } from "../actions/workspace";
+import { getUserTasks } from "../actions/user";
+import { getUserWorkspaces, getWorkspaceProjects } from "../actions/workspace";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,17 +28,39 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await requireAuthenticatedAppAccess();
-  const {user} = await getNeonSignedUser(); // your auth
-  const workspaces = await getUserWorkspaces(user?.id as string);
+  const { user } = await requireAuthenticatedAppAccess();
+  const userId = user?.id ?? "";
+  const workspaces = await getUserWorkspaces(userId);
+  const [projectGroups, assignedTasks] = await Promise.all([
+    Promise.all(workspaces.map((workspace) => getWorkspaceProjects(workspace.id))),
+    getUserTasks(userId),
+  ]);
+  const projects = projectGroups.flat();
+  const projectIds = new Set(projects.map((project) => project.id));
+  const userTasks = assignedTasks.filter((task) => projectIds.has(task.project_id));
+  const projectNames = new Map(projects.map((project) => [project.id, project.name]));
+  const navbarSummary = {
+    projectCount: projects.length,
+    recentProjects: projects.slice(0, 3).map(({ id, name }) => ({ id, name })),
+    taskCount: userTasks.length,
+    todoCount: userTasks.filter((task) => task.status === "TODO").length,
+    inProgressCount: userTasks.filter((task) => task.status === "IN_PROGRESS").length,
+    completedCount: userTasks.filter((task) => task.status === "DONE").length,
+    recentTasks: userTasks.slice(0, 3).map((task) => ({
+      id: task.task_id,
+      title: task.title,
+      status: task.status,
+      projectName: projectNames.get(task.project_id) ?? "Project",
+    })),
+  };
   return (
       <div
-        className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       > <WorkspaceHydrator workspaces={workspaces}>
           <SidebarProvider>
             <AppSidebar />
               <div className="flex-1">
-                <Navbar />
+                <Navbar user={user} summary={navbarSummary} />
                 <main className="p-6 xl:py-10 xl:px-16">
                   {children}
                 </main>

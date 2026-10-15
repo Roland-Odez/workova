@@ -117,6 +117,24 @@
 }
 
 @layer base {
+  .auth-page-background {
+    background-color: #edf3ef;
+    background-image:
+      linear-gradient(135deg, rgb(33 113 87 / 11%), transparent 48%),
+      linear-gradient(315deg, rgb(197 104 70 / 10%), transparent 46%),
+      repeating-linear-gradient(0deg, transparent 0 47px, rgb(33 69 57 / 4%) 48px),
+      repeating-linear-gradient(90deg, transparent 0 47px, rgb(33 69 57 / 4%) 48px);
+  }
+
+  .dark .auth-page-background {
+    background-color: #111b18;
+    background-image:
+      linear-gradient(135deg, rgb(44 142 105 / 17%), transparent 48%),
+      linear-gradient(315deg, rgb(190 101 68 / 12%), transparent 46%),
+      repeating-linear-gradient(0deg, transparent 0 47px, rgb(218 239 228 / 3%) 48px),
+      repeating-linear-gradient(90deg, transparent 0 47px, rgb(218 239 228 / 3%) 48px);
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

@@ -43,8 +43,8 @@ const CreateOrganisationForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-100 px-4 py-10 dark:bg-zinc-950">
-      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-6 shadow-xl shadow-black/10 dark:bg-zinc-900 dark:shadow-black/30 sm:p-8">
+    <div className="auth-page-background min-h-screen px-4 py-10">
+      <div className="mx-auto max-w-2xl rounded-3xl border border-white/70 bg-white p-6 shadow-xl shadow-black/10 dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-black/30 sm:p-8">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
             Create Workspace

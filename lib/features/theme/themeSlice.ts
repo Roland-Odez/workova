@@ -2,17 +2,6 @@
 
 import { createSlice } from "@reduxjs/toolkit";
 
-// Helper to apply theme to document
-const applyTheme = (theme: string) => {
-  if (typeof window === "undefined") return
-  if (theme === "dark") {
-    document.body.classList.add("dark");
-  } else {
-    document.body.classList.remove("dark");
-  }
-  localStorage?.setItem("theme", theme);
-};
-
 const getInitialTheme = () => {
   // Check localStorage first
   if (typeof window === "undefined") return "dark"
@@ -36,17 +25,14 @@ const themeSlice = createSlice({
     toggleTheme: (state) => {
       const newTheme = state.theme === "light" ? "dark" : "light";
       state.theme = newTheme;
-      applyTheme(newTheme);
     },
     setTheme: (state, action) => {
       const theme = action.payload;
       state.theme = theme;
-      applyTheme(theme);
     },
     loadTheme: (state) => {
       const theme = getInitialTheme();
       state.theme = theme;
-      applyTheme(theme);
     },
   },
 });
