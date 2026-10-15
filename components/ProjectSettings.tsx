@@ -1,6 +1,5 @@
-import { format } from "date-fns";
 import { Save } from "lucide-react";
-import { SubmitEventHandler, useEffect, useState } from "react";
+import { useState } from "react";
 import { Project } from "@/types/project";
 import { Field, FieldLabel } from "./ui/field";
 import { Label } from "./ui/label";
@@ -8,29 +7,33 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import AddProjectMember from "./AddProjectMember";
 
+type ProjectFormData = {
+    name: string;
+    description: string;
+    status: string;
+    priority: string;
+    start_date: string;
+    end_date: string;
+    progress: number;
+};
+
 export default function ProjectSettings({ project }: {project: Project}) {
-
-
-    const [formData, setFormData] = useState<any>({
-        name: "New Website Launch",
-        description: "Initial launch for new web platform.",
-        status: "PLANNING",
-        priority: "MEDIUM",
-        start_date: "2025-10-10",
-        end_date: "2025-10-15",
-        progress: 30,
+    const toFormData = (value: Project): ProjectFormData => ({
+        name: value.name ?? "",
+        description: value.description ?? "",
+        status: value.status ?? "PLANNING",
+        priority: value.priority ?? "MEDIUM",
+        start_date: value.start_date ? new Date(value.start_date).toISOString().slice(0, 10) : "",
+        end_date: value.end_date ? new Date(value.end_date).toISOString().slice(0, 10) : "",
+        progress: value.progress ?? 0,
     });
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formData, setFormData] = useState<ProjectFormData>(() => toFormData(project));
+    const [isSubmitting] = useState(false);
 
-    const handleSubmit :SubmitEventHandler<HTMLFormElement> = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
     };
-
-    useEffect(() => {
-        if (project) setFormData(project);
-    }, [project]);
 
     const inputClasses = "w-full px-3 py-2 rounded mt-2 border text-sm dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300";
 
@@ -53,7 +56,7 @@ export default function ProjectSettings({ project }: {project: Project}) {
                     {/* Description */}
                     <Field>
                         <Label htmlFor="project-desc" className={labelClasses}>Description</Label>
-                        <Input id="project-desc" value={formData.name} name="description" placeholder="Project Description" onChange={(val) => setFormData({ ...formData, description: val.target.value })} />
+                        <Input id="project-desc" value={formData.description} name="description" placeholder="Project Description" onChange={(val) => setFormData({ ...formData, description: val.target.value })} />
                     </Field>
 
                     {/* Status & Priority */}
@@ -96,11 +99,11 @@ export default function ProjectSettings({ project }: {project: Project}) {
                     <div className="space-y-4 grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className={labelClasses}>Start Date</label>
-                            <input type="date" value={format(formData.start_date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, start_date: new Date(e.target.value) })} className={inputClasses} />
+                            <input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className={inputClasses} />
                         </div>
                         <div className="space-y-2">
                             <label className={labelClasses}>End Date</label>
-                            <input type="date" value={format(formData.end_date, "yyyy-MM-dd")} onChange={(e) => setFormData({ ...formData, end_date: new Date(e.target.value) })} className={inputClasses} />
+                            <input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className={inputClasses} />
                         </div>
                     </div>
 

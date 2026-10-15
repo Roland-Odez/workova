@@ -4,20 +4,21 @@ import RecentActivity from '@/components/RecentActivity'
 import StatsBoard from '@/components/StatsBoard'
 import TasksSummary from '@/components/TaskSummary'
 import { getNeonSignedUser } from '../actions/user'
+import { User } from '@/types/user'
 
 const Dashboard = async () => {
-    const user = await getNeonSignedUser()
+    const {user} = await getNeonSignedUser()
   return (
     <div>
         <section className='flex items-center justify-between'>
             <div>
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1"> Welcome back, {user.user?.name} </h1>
-                <p className="text-gray-500 dark:text-zinc-400 text-sm"> Here's what's happening with your projects today </p>
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1"> Welcome back, {user?.name} </h1>
+                <p className="text-gray-500 dark:text-zinc-400 text-sm"> Here&apos;s what&apos;s happening with your projects today </p>
             </div>
 
             <CreateProjectDialog />
         </section>
-        <StatsBoard />
+        <StatsBoard user={user as User} />
         <section className='grid grid-cols-3 gap-8'>
             <div className="lg:col-span-2 space-y-8">
                 <ProjectOverview />

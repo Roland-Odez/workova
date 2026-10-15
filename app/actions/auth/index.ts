@@ -1,6 +1,6 @@
 "use server";
 
-import { createWorkspace } from "../workspace";
+import { createWorkspace } from "../workspace/create";
 import { getNeonSignedUser } from "../user";
 import { auth } from "@/lib/server";
 import { redirect } from "next/navigation";

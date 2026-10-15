@@ -1,9 +1,14 @@
-import { requireSignedOutUser } from "@/lib/auth";
 
+import { redirect } from "next/navigation";
 import SignUpForm from "./SignUpForm";
+import { getAuthContext } from "@/lib/auth";
 
 const SignUpPage = async () => {
-  await requireSignedOutUser();
+  const context = await getAuthContext();
+
+  if (context.isAuthenticated) {
+    redirect('/')
+  }
 
   return <SignUpForm />;
 };

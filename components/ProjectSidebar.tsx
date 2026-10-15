@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LuKanban, LuChartBar, LuCalendar, LuSettings } from "react-icons/lu";
 import { CaretRightIcon } from '@phosphor-icons/react'
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { dummyWorkspaces } from '@/public/assets/dummyData';
+import { useAppSelector } from '@/lib/hooks';
+import { getWorkspaceProjects, WorkspaceProject } from '@/app/actions/workspace';
 
 const ProjectSidebar = () => {
 
     const path = usePathname();
-
+    const { selectedWorkspace } = useAppSelector((state) => state.workspace);
     const [expandedProjects, setExpandedProjects] = useState(new Set());
+    const [projects, setProjects] = useState<WorkspaceProject[]| []>([]);
     const searchParams = useSearchParams();
-    const projects = dummyWorkspaces[0].projects
 
     const getProjectSubItems = (projectId: string) => [
         { title: 'Tasks', icon: LuKanban, url: `/project-detail?id=${projectId}&tab=tasks` },
@@ -22,9 +23,26 @@ const ProjectSidebar = () => {
 
     const toggleProject = (id: string) => {
         const newSet = new Set(expandedProjects);
-        newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
         setExpandedProjects(newSet);
     };
+
+    useEffect(() => {
+        async function getProjects(){
+            if (!selectedWorkspace?.id) {
+                setProjects([]);
+                return;
+            }
+            const projects = await getWorkspaceProjects(selectedWorkspace.id)
+            setProjects(projects)
+        }
+
+        void getProjects();
+    }, [selectedWorkspace?.id]);
 
     return (
         <div className="mt-6 px-3">
@@ -43,12 +61,12 @@ const ProjectSidebar = () => {
                 {projects?.map((project) => (
                     <div key={project.id}>
                         <button onClick={() => toggleProject(project.id)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white" >
-                            <CaretRightIcon className={`size-3 text-gray-500 dark:text-zinc-400 transition-transform duration-200 ${expandedProjects.has(project.id) && 'rotate-90'}`} />
+                            <CaretRightIcon className={`size-3 text-gray-500 dark:text-zinc-400 transition-transform duration-200 ${expandedProjects.has(project.id) ? "rotate-90" : ""}`} />
                             <div className="size-2 rounded-full bg-blue-500" />
                             <span className="truncate max-w-40 text-sm">{project.name}</span>
                         </button>
 
-                        {expandedProjects.has(project.id) && (
+                        {expandedProjects.has(project.id) ? (
                             <div className="ml-5 mt-1 space-y-1">
                                 {getProjectSubItems(project.id).map((subItem) => {
                                     // checking if the current path matches the sub-item's URL
@@ -65,7 +83,7 @@ const ProjectSidebar = () => {
                                     );
                                 })}
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 ))}
             </div>

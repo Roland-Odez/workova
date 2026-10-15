@@ -2,9 +2,6 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/server";
 import type { User } from "@/types/user";
-import { sql } from "./db";
-
-type WorkspaceAccessRole = "OWNER" | "ADMIN" | "MEMBER";
 
 export type AuthContext = {
   isAuthenticated: boolean;
@@ -29,31 +26,6 @@ function mapSessionUser(sessionUser: {
     createdAt: sessionUser.createdAt ?? new Date().toISOString(),
     updatedAt: sessionUser.updatedAt ?? new Date().toISOString(),
   };
-}
-
-async function hasWorkspaceAccess(
-  userId: string,
-  workspaceId: string
-): Promise<boolean> {
-
-  const result = await sql`
-    SELECT EXISTS (
-      SELECT 1
-      FROM workspaces w
-      WHERE w.id = ${workspaceId}
-      AND (
-        w.owner_id = ${userId}
-        OR EXISTS (
-          SELECT 1
-          FROM workspace_members wm
-          WHERE wm.workspace_id = ${workspaceId}
-          AND wm.user_id = ${userId}
-        )
-      )
-    ) AS has_access
-  ` as { has_access: boolean }[];
-
-  return result[0]?.has_access ?? false;
 }
 
 export async function getAuthContext(): Promise<AuthContext> {

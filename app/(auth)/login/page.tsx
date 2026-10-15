@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 const LoginPage = async () => {
   const context = await getAuthContext();
   
-    if (!context.isAuthenticated) {
+    if (context.isAuthenticated) {
       redirect('/')
     }
 

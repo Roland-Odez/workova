@@ -1,50 +1,102 @@
-"use client"
-import { useEffect, useState } from "react";
+"use client";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Clock, AlertTriangle, User } from "lucide-react";
-import { dummyWorkspaces } from "@/public/assets/dummyData";
-import {Task} from '@/types/task'
+import { getNeonSignedUser, getUserTasks, UserTasks } from "@/app/actions/user";
+import { getWorkspaceProjects, getWorkspaceTasks, WorkspaceProject, WorkspaceTask } from "@/app/actions/workspace";
+import { useAppSelector } from "@/lib/hooks";
 
 export default function TasksSummary() {
+    const { selectedWorkspace } = useAppSelector((state) => state.workspace);
+    const [workspaceTasks, setWorkspaceTasks] = useState<WorkspaceTask[]>([]);
+    const [myTasks, setMyTasks] = useState<UserTasks[]>([]);
 
-    
-    const currentWorkspace = dummyWorkspaces[0]
-    const user = { id: 'user_1' }
-    const [tasks, setTasks] = useState<Task[]|[]>([]);
-
-    // Get all tasks for all projects in current workspace
     useEffect(() => {
-        if (currentWorkspace) {
-            setTasks(currentWorkspace.projects.flatMap((project) => project.tasks));
-        }
-    }, [currentWorkspace]);
+        async function loadTasks() {
+            if (!selectedWorkspace?.id) {
+                setWorkspaceTasks([]);
+                setMyTasks([]);
+                return;
+            }
 
-    const myTasks = tasks.filter(i => i.assigneeId === user.id);
-    const overdueTasks = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'DONE');
-    const inProgressIssues = tasks.filter(i => i.status === 'IN_PROGRESS');
+            try {
+                const [{ user }, workspaceProjects, nextTasks] = await Promise.all([
+                    getNeonSignedUser(),
+                    getWorkspaceProjects(selectedWorkspace.id),
+                    getWorkspaceTasks(selectedWorkspace.id),
+                ]);
 
-    const summaryCards = [
-        {
-            title: "My Tasks",
-            count: myTasks.length,
-            icon: User,
-            color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
-            items: myTasks.slice(0, 3)
-        },
-        {
-            title: "Overdue",
-            count: overdueTasks.length,
-            icon: AlertTriangle,
-            color: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400",
-            items: overdueTasks.slice(0, 3)
-        },
-        {
-            title: "In Progress",
-            count: inProgressIssues.length,
-            icon: Clock,
-            color: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400",
-            items: inProgressIssues.slice(0, 3)
+                setWorkspaceTasks(nextTasks);
+
+                if (!user?.id) {
+                    setMyTasks([]);
+                    return;
+                }
+
+                const projectIds = new Set(workspaceProjects.map((project: WorkspaceProject) => project.id));
+                const assigned = await getUserTasks(user.id);
+                setMyTasks(assigned.filter((task) => projectIds.has(task.project_id)));
+            } catch (error) {
+                console.error("Failed to load task summary:", error);
+                setWorkspaceTasks([]);
+                setMyTasks([]);
+            }
         }
-    ];
+
+        void loadTasks();
+    }, [selectedWorkspace?.id]);
+
+    const overdueTasks = useMemo(
+        () => workspaceTasks.filter(
+            (task) => task.due_date && new Date(task.due_date) < new Date() && task.status !== "DONE"
+        ),
+        [workspaceTasks]
+    );
+    const inProgressIssues = useMemo(
+        () => workspaceTasks.filter((task) => task.status === "IN_PROGRESS"),
+        [workspaceTasks]
+    );
+
+    const summaryCards = useMemo(
+        () => [
+            {
+                title: "My Tasks",
+                count: myTasks.length,
+                icon: User,
+                color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
+                items: myTasks.slice(0, 3).map((task) => ({
+                    id: task.task_id ?? task.title,
+                    title: task.title,
+                    type: task.type,
+                    priority: task.priority,
+                })),
+            },
+            {
+                title: "Overdue",
+                count: overdueTasks.length,
+                icon: AlertTriangle,
+                color: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400",
+                items: overdueTasks.slice(0, 3).map((task) => ({
+                    id: task.id ?? task.title,
+                    title: task.title,
+                    type: task.type,
+                    priority: task.priority,
+                })),
+            },
+            {
+                title: "In Progress",
+                count: inProgressIssues.length,
+                icon: Clock,
+                color: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400",
+                items: inProgressIssues.slice(0, 3).map((task) => ({
+                    id: task.id ?? task.title,
+                    title: task.title,
+                    type: task.type,
+                    priority: task.priority,
+                })),
+            },
+        ],
+        [inProgressIssues, myTasks, overdueTasks]
+    );
 
     return (
         <div className="space-y-6">
@@ -73,10 +125,10 @@ export default function TasksSummary() {
                                 {card.items.map((issue) => (
                                     <div key={issue.id} className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
                                         <h4 className="text-sm font-medium text-gray-800 dark:text-white truncate">
-                                            {issue.title}
+                                            {issue.title || "Task"}
                                         </h4>
                                         <p className="text-xs text-gray-600 dark:text-zinc-400 capitalize mt-1">
-                                            {issue.type} • {issue.priority} priority
+                                            {issue.type || "task"} • {issue.priority || "medium"} priority
                                         </p>
                                     </div>
                                 ))}

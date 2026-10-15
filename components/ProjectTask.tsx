@@ -1,13 +1,14 @@
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap } from "lucide-react";
-import { Task } from "@/types/task";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TaskStatus } from "@/types";
 import Image from "next/image";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Button } from "./ui/button";
+import { ProjectTasksAndUser } from "@/app/actions/project";
+import { deleteTasks, updateTaskStatus } from "@/app/actions/project";
 
 const typeIcons = {
     BUG: { icon: Bug, color: "text-red-600 dark:text-red-400" },
@@ -23,56 +24,48 @@ const priorityTexts = {
     HIGH: { background: "bg-emerald-100 dark:bg-emerald-950", prioritycolor: "text-emerald-600 dark:text-emerald-400" },
 };
 
-const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
+const ProjectTasks = ({ tasks }: {tasks: ProjectTasksAndUser[]}) => {
     const router = useRouter();
-    const [selectedTasks, setSelectedTasks] = useState<string[]|[]>([]);
+    const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
     const [filters, setFilters] = useState({
         status: "",
         type: "",
         priority: "",
-        assignee: "",
+        assigneeId: "",
     });
 
     const assigneeList = useMemo(
-        () => Array.from(new Set(tasks.map((t) => t.assignee?.name).filter(Boolean))),
+        () => Array.from(new Set(tasks.map((task) => task.user?.id).filter((id): id is string => Boolean(id)))),
         [tasks]
     );
 
     const filteredTasks = useMemo(() => {
         return tasks.filter((task) => {
-            const { status, type, priority, assignee } = filters;
+            const { status, type, priority, assigneeId } = filters;
             return (
                 (!status || task.status === status) &&
                 (!type || task.type === type) &&
                 (!priority || task.priority === priority) &&
-                (!assignee || task.assignee?.name === assignee)
+                (!assigneeId || task.user?.id === assigneeId)
             );
         });
     }, [filters, tasks]);
 
-    const handleFilterChange = (name: string, value: string) => {
+    const handleFilterChange = (name: "status" | "type" | "priority" | "assigneeId", value: string) => {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
         try {
-            toast("Updating status...")
-
-            //  Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            let updatedTask = structuredClone(tasks.find((t) => t.id === taskId));
-            if(updatedTask) {
-                updatedTask.status = newStatus;
-            }
-            // dispatch(updateTask(updatedTask));
-
-            toast.dismiss();
+            const result = await updateTaskStatus(taskId, newStatus);
+            if (result.error) throw new Error(result.error);
+            router.refresh();
             toast.success("Task status updated successfully");
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unable to update task.";
             toast.dismiss();
-            toast.error(error?.response?.data?.message || error.message);
+            toast.error(message);
         }
     };
 
@@ -81,18 +74,15 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
             const confirm = window.confirm("Are you sure you want to delete the selected tasks?");
             if (!confirm) return;
 
-            toast.loading("Deleting tasks...");
-
-            //  Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            // dispatch(deleteTask(selectedTasks));
-
-            toast.dismiss();
+            const result = await deleteTasks([...selectedTasks]);
+            if (result.error) throw new Error(result.error);
+            setSelectedTasks([]);
+            router.refresh();
             toast.success("Tasks deleted successfully");
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unable to delete tasks.";
             toast.dismiss();
-            toast.error(error?.response?.data?.message || error.message);
+            toast.error(message);
         }
     };
 
@@ -100,8 +90,8 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
         <div>
             {/* Filters */}
             <div className="flex flex-wrap gap-4 mb-4">
-                {["status", "type", "priority", "assignee"].map((name) => {
-                    const options: any = {
+                {(["status", "type", "priority", "assigneeId"] as const).map((name) => {
+                    const options: Record<string, Array<{ label: string; value: string | null }>> = {
                         status: [
                             { label: "All Statuses", value: null },
                             { label: "To Do", value: "TODO" },
@@ -122,20 +112,21 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
                             { label: "Medium", value: "MEDIUM" },
                             { label: "High", value: "HIGH" },
                         ],
-                        assignee: [
+                        assigneeId: [
                             { label: "All Assignees", value: null },
-                            ...assigneeList.map((n) => ({ label: n, value: n })),
+                            ...assigneeList.map((id) => ({ label: id, value: id })),
                         ],
                     };
+                    const selectOptions = options[name] ?? [];
                     return (
-                        <Select key={name} defaultValue={options[name][0].value} name={name} onValueChange={(val) => handleFilterChange(name, val)}>
+                        <Select key={name} defaultValue={selectOptions[0]?.value ?? ""} name={name} onValueChange={(val) => handleFilterChange(name, val)}>
                             <SelectTrigger id={name}>
-                                <SelectValue defaultValue={options[name][0].value} />
+                                <SelectValue defaultValue={selectOptions[0]?.value ?? ""} />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    {options[name].map((opt:any, idx:any) => (
-                                        <SelectItem key={idx} value={opt.value}>{opt.label}</SelectItem>
+                                    {selectOptions.map((opt, idx) => (
+                                        <SelectItem key={`${name}-${idx}`} value={opt.value ?? ""}>{opt.label}</SelectItem>
                                     ))}
                                 </SelectGroup>
                             </SelectContent>
@@ -144,8 +135,8 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
                 })}
 
                 {/* Reset filters */}
-                {(filters.status || filters.type || filters.priority || filters.assignee) && (
-                    <Button variant="default" onClick={() => setFilters({ status: "", type: "", priority: "", assignee: "" })} className="px-3 py-1 flex items-center gap-2 rounded bg-linear-to-br from-purple-400 to-purple-500 text-zinc-100 dark:text-zinc-200 text-sm transition-colors" >
+                {(filters.status || filters.type || filters.priority || filters.assigneeId) && (
+                    <Button variant="default" onClick={() => setFilters({ status: "", type: "", priority: "", assigneeId: "" })} className="px-3 py-1 flex items-center gap-2 rounded bg-linear-to-br from-purple-400 to-purple-500 text-zinc-100 dark:text-zinc-200 text-sm transition-colors" >
                         <XIcon className="size-3" /> Reset
                     </Button>
                 )}
@@ -188,7 +179,7 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
                                         const { background, prioritycolor } = priorityTexts[task.priority] || {};
 
                                         return (
-                                            <tr key={task.id} onClick={() => router.push(`/taskDetails?projectId=${task.projectId}&taskId=${task.id}`)} className=" border-t border-zinc-300 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer" >
+                                            <tr key={task.id} onClick={() => router.push(`/task-detail?projectId=${task.project_id}&taskId=${task.id}`)} className=" border-t border-zinc-300 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer" >
                                                 <td onClick={e => e.stopPropagation()} className="pl-2 pr-1">
                                                     <input type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" 
                                                         onChange={() => 
@@ -223,14 +214,14 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-2">
-                                                        <Image width={20} height={20} src={task.assignee?.image} className="size-5 rounded-full" alt="avatar" />
-                                                        {task.assignee?.name || "-"}
+                                                        <Image width={20} height={20} src={task.user?.image || '/favicon.ico'} className="size-5 rounded-full" alt="avatar" />
+                                                        {task.user?.name || "-"}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
                                                         <CalendarIcon className="size-4" />
-                                                        {format(new Date(task.due_date), "dd MMMM")}
+                                                        {task.due_date ? format(new Date(task.due_date), "dd MMMM") : "No due date"}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -288,13 +279,13 @@ const ProjectTasks = ({ tasks }: {tasks: Task[]}) => {
                                         </div>
 
                                         <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                            <Image width={20} height={20} src={task.assignee?.image} className="size-5 rounded-full" alt="avatar" />
-                                            {task.assignee?.name || "-"}
+                                            <Image width={20} height={20} src={task.user?.image || '/favicon.ico'} className="size-5 rounded-full" alt="avatar" />
+                                            {task.user?.name || "-"}
                                         </div>
 
                                         <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                                             <CalendarIcon className="size-4" />
-                                            {format(new Date(task.due_date), "dd MMMM")}
+                                            {task.due_date ? format(new Date(task.due_date), "dd MMMM") : "No due date"}
                                         </div>
                                     </div>
                                 );

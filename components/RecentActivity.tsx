@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GitCommit, MessageSquare, Clock, Bug, Zap, Square } from "lucide-react";
 import { format } from "date-fns";
-import { dummyWorkspaces } from "@/public/assets/dummyData";
-import { Task } from "@/types/task";
+import { getWorkspaceTasks, WorkspaceTask } from "@/app/actions/workspace";
+import { useAppSelector } from "@/lib/hooks";
 
-const typeIcons = {
+const typeIcons: Record<string, { icon: typeof Bug; color: string }> = {
     BUG: { icon: Bug, color: "text-red-500 dark:text-red-400" },
     FEATURE: { icon: Zap, color: "text-blue-500 dark:text-blue-400" },
     TASK: { icon: Square, color: "text-green-500 dark:text-green-400" },
@@ -21,20 +21,33 @@ const statusColors = {
 };
 
 const RecentActivity = () => {
-    const [tasks, setTasks] = useState<Task[] | []>([]);
-    const projects = dummyWorkspaces[0].projects
-
-    const getTasksFromCurrentWorkspace = () => {
-
-        if (!projects) return;
-
-        const tasks = projects.flatMap((project) => project.tasks.map((task) => task));
-        setTasks(tasks);
-    };
+    const { selectedWorkspace } = useAppSelector((state) => state.workspace);
+    const [tasks, setTasks] = useState<WorkspaceTask[]>([]);
 
     useEffect(() => {
-        getTasksFromCurrentWorkspace();
-    }, [projects]);
+        async function loadTasks() {
+            if (!selectedWorkspace?.id) {
+                setTasks([]);
+                return;
+            }
+
+            try {
+                const nextTasks = await getWorkspaceTasks(selectedWorkspace.id);
+                setTasks(
+                    [...nextTasks].sort(
+                        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                    )
+                );
+            } catch (error) {
+                console.error("Failed to load recent activity:", error);
+                setTasks([]);
+            }
+        }
+
+        void loadTasks();
+    }, [selectedWorkspace?.id]);
+
+    const activityTasks = useMemo(() => tasks.slice(0, 6), [tasks]);
 
     return (
         <div className="bg-white dark:bg-zinc-950 dark:bg-linear-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-lg transition-all overflow-hidden">
@@ -43,7 +56,7 @@ const RecentActivity = () => {
             </div>
 
             <div className="p-0">
-                {tasks.length === 0 ? (
+                {activityTasks.length === 0 ? (
                     <div className="p-12 text-center">
                         <div className="w-16 h-16 mx-auto mb-4 bg-zinc-200 dark:bg-zinc-800 rounded-full flex items-center justify-center">
                             <Clock className="w-8 h-8 text-zinc-600 dark:text-zinc-500" />
@@ -52,7 +65,7 @@ const RecentActivity = () => {
                     </div>
                 ) : (
                     <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                        {tasks.map((task) => {
+                        {activityTasks.map((task) => {
                             const TypeIcon = typeIcons[task.type]?.icon || Square;
                             const iconColor = typeIcons[task.type]?.color || "text-gray-500 dark:text-gray-400";
 
@@ -64,26 +77,15 @@ const RecentActivity = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between mb-2">
-                                                <h4 className="text-zinc-800 dark:text-zinc-200 truncate">
-                                                    {task.title}
-                                                </h4>
+                                                <h4 className="text-zinc-800 dark:text-zinc-200 truncate">{task.title}</h4>
                                                 <span className={`ml-2 px-2 py-1 rounded text-xs ${statusColors[task.status] || "bg-zinc-300 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300"}`}>
                                                     {task.status.replace("_", " ")}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
                                                 <span className="capitalize">{task.type.toLowerCase()}</span>
-                                                {task.assignee && (
-                                                    <div className="flex items-center gap-1">
-                                                        <div className="w-4 h-4 bg-zinc-300 dark:bg-zinc-700 rounded-full flex items-center justify-center text-[10px] text-zinc-800 dark:text-zinc-200">
-                                                            {task.assignee.name[0].toUpperCase()}
-                                                        </div>
-                                                        {task.assignee.name}
-                                                    </div>
-                                                )}
-                                                <span>
-                                                    {format(new Date(task.updatedAt), "MMM d, h:mm a")}
-                                                </span>
+                                                <span>{task.project_name}</span>
+                                                <span>{format(new Date(task.updated_at), "MMM d, h:mm a")}</span>
                                             </div>
                                         </div>
                                     </div>

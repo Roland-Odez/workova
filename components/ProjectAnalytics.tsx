@@ -4,8 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie } from 
 import { CheckCircle, Clock, AlertTriangle, Users, ArrowRightIcon } from "lucide-react";
 import { useMemo } from 'react'
 
-const COLORS :any = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
-const PRIORITY_COLORS: any = {
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"] as const;
+const PRIORITY_COLORS: Record<string, string> = {
     LOW: "text-red-600 bg-red-200 dark:text-red-500 dark:bg-red-600",
     MEDIUM: "text-blue-600 bg-blue-200 dark:text-blue-500 dark:bg-blue-600",
     HIGH: "text-emerald-600 bg-emerald-200 dark:text-emerald-500 dark:bg-emerald-600",
@@ -33,7 +33,7 @@ const ProjectAnalytics = ({tasks, project}: {tasks: Task[], project: Project}) =
             if (t.status === "DONE") stats.completed++;
             if (t.status === "IN_PROGRESS") stats.inProgress++;
             if (t.status === "TODO") stats.todo++;
-            if (new Date(t.due_date) < now && t.status !== "DONE") stats.overdue++;
+            if (t.due_date && new Date(t.due_date) < now && t.status !== "DONE") stats.overdue++;
 
             if (statusMap[t.status] !== undefined) statusMap[t.status]++;
             if (typeMap[t.type] !== undefined) typeMap[t.type]++;
@@ -42,7 +42,7 @@ const ProjectAnalytics = ({tasks, project}: {tasks: Task[], project: Project}) =
             return {
             stats,
             statusData: Object.entries(statusMap).map(([k, v]) => ({ name: k.replace("_", " "), value: v })),
-            typeData: Object.entries(typeMap).filter(([_, v]) => v > 0).map(([k, v], i) => ({ name: k, value: v, fill: COLORS[i % COLORS.length]})),
+            typeData: Object.entries(typeMap).filter(([, value]) => value > 0).map(([k, v], i) => ({ name: k, value: v, fill: COLORS[i % COLORS.length]})),
             priorityData: Object.entries(priorityMap).map(([k, v]) => ({
                 name: k,
                 value: v,

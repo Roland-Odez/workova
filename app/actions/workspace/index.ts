@@ -1,15 +1,51 @@
-import cloudinary from "@/lib/cloundinary";
-import { sql } from "../../../lib/db";
-import { WorkspaceType } from "@/lib/features/worskspace/workspaceSlice";
+"use server";
 
-type CreateWorkspaceInput = {
-  name: string;
-  slug: string;
-  logo?: File | null;
-  owner: string;
+import { WorkspaceType } from "@/lib/features/worskspace/workspaceSlice";
+import { sql } from "../../../lib/db";
+import { Priority, ProjectStatus } from "@/types";
+import { getNeonSignedUser } from "../user";
+import { revalidatePath } from "next/cache";
+
+export type WorkspaceUser = {
+  id: string;
+  role: "ADMIN" | "MEMBER";
+  created_at: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string;
+  };
 };
 
-async function ensureWorkspacesTable() {
+type WorkspaceUserRow = {
+  member_id: string;
+  role: "ADMIN" | "MEMBER";
+  joined_at: string;
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+};
+
+export type WorkspaceProject = {
+  id: string
+  name: string
+  description: string
+  priority: Priority
+  status: ProjectStatus
+  start_date: string
+  end_date: string
+  team_lead: string
+  workspace_id: string
+  progress: number
+  created_at: string
+  updated_at: string
+}
+
+export type WorkspaceTask = { id:string; project_id:string; title:string; status:"TODO"|"IN_PROGRESS"|"DONE"; type:string; priority:string; due_date:string|null; updated_at:string; project_name:string; assignee_name:string|null };
+
+export async function ensureWorkspacesTable() {
   await sql`
     CREATE EXTENSION IF NOT EXISTS pgcrypto
   `;
@@ -29,54 +65,6 @@ async function ensureWorkspacesTable() {
   `;
 }
 
-async function uploadWorkspaceLogo(logo?: File | null) {
-  if (!logo || logo.size === 0) {
-    return "";
-  }
-
-  const bytes = await logo.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  return await new Promise<string>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: "workova/organisations",
-        resource_type: "auto",
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-          console.log('error', error)
-          return;
-        }
-
-        resolve(result?.secure_url ?? "");
-      }
-    );
-
-    stream.end(buffer);
-  });
-}
-
-export async function createWorkspace({
-  name,
-  slug,
-  logo,
-  owner
-}: CreateWorkspaceInput) {
-  await ensureWorkspacesTable();
-
-  const imageUrl = await uploadWorkspaceLogo(logo);
-
-  const workspace = await sql`
-    INSERT INTO workspaces (name, slug, image_url, owner_id)
-    VALUES (${name}, ${slug}, ${imageUrl}, ${owner})
-    RETURNING id, name, slug, image_url, owner_id, created_at, updated_at
-  `;
-
-  console.log("workspace",workspace)
-}
-
 export async function getUserWorkspaces(userId: string) {
   const result = await sql`
     SELECT w.id, w.name, w.slug, w.owner_id, image_url
@@ -93,4 +81,83 @@ export async function getUserWorkspaces(userId: string) {
   `;
 
   return result as WorkspaceType[];
+}
+
+export async function getWorkspaceUsers(workspaceId: string) {
+  if (!workspaceId) {
+    return [] as WorkspaceUser[];
+  }
+
+  const result = await sql`
+    SELECT
+      wm.id AS member_id,
+      wm.role,
+      wm.created_at AS joined_at,
+      u.id,
+      u.name,
+      u.email,
+      u.image
+    FROM workspace_members wm
+    INNER JOIN neon_auth."user" u
+      ON u.id = wm.user_id
+    WHERE wm.workspace_id = ${workspaceId}
+    ORDER BY wm.created_at DESC
+  `;
+
+  return (result as WorkspaceUserRow[]).map((row) => ({
+    id: row.member_id,
+    role: row.role,
+    created_at: row.joined_at,
+    user: {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      image: row.image ?? undefined,
+    },
+  })) as WorkspaceUser[];
+}
+
+export async function getWorkspaceProjects(workspaceId: string){
+  if (!workspaceId) {
+    return [] as WorkspaceProject[];
+  }
+
+  const result = await sql`
+    SELECT
+      id,
+      name,
+      description,
+      priority,
+      status,
+      start_date,
+      end_date,
+      team_lead,
+      workspace_id,
+      progress,
+      created_at,
+      updated_at
+    FROM projects
+    WHERE workspace_id = ${workspaceId}::uuid
+    ORDER BY created_at DESC
+  `;
+
+  return result as WorkspaceProject[];
+}
+
+export async function getWorkspaceTasks(workspaceId: string) {
+  if (!workspaceId) return [] as WorkspaceTask[];
+  const rows = await sql`SELECT t.id,t.project_id,t.title,t.status,t.type,t.priority,t.due_date,t.updated_at,p.name AS project_name,u.name AS assignee_name FROM tasks t JOIN projects p ON p.id=t.project_id LEFT JOIN neon_auth."user" u ON u.id=t.assignee_id WHERE p.workspace_id=${workspaceId}::uuid ORDER BY t.updated_at DESC`;
+  return rows as WorkspaceTask[];
+}
+
+export async function addWorkspaceMember(workspaceId: string, email: string, role: "ADMIN" | "MEMBER" = "MEMBER") {
+  const currentUser = await getNeonSignedUser();
+  if (!currentUser.user) return { error: "You must be signed in." };
+  const access = await sql`SELECT EXISTS(SELECT 1 FROM workspaces WHERE id=${workspaceId}::uuid AND owner_id=${currentUser.user.id}::uuid) AS allowed` as { allowed: boolean }[];
+  if (!access[0]?.allowed) return { error: "Only the workspace owner can add members." };
+  const users = await sql`SELECT id FROM neon_auth."user" WHERE lower(email)=lower(${email.trim()})` as { id: string }[];
+  if (!users[0]) return { error: "No account exists for that email yet." };
+  await sql`INSERT INTO workspace_members (workspace_id,user_id,role) VALUES (${workspaceId}::uuid,${users[0].id}::uuid,${role}) ON CONFLICT (workspace_id,user_id) DO UPDATE SET role=EXCLUDED.role`;
+  revalidatePath("/teams");
+  return { success: "Member added to workspace." };
 }
