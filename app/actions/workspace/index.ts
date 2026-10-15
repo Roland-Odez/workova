@@ -45,6 +45,31 @@ export type WorkspaceProject = {
 
 export type WorkspaceTask = { id:string; project_id:string; title:string; status:"TODO"|"IN_PROGRESS"|"DONE"; type:string; priority:string; due_date:string|null; updated_at:string; project_name:string; assignee_name:string|null };
 
+export type WorkspaceSearchProject = {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  workspace_name: string;
+};
+
+export type WorkspaceSearchTask = {
+  id: string;
+  title: string;
+  status: string;
+  type: string;
+  priority: string;
+  project_id: string;
+  project_name: string;
+  workspace_name: string;
+};
+
+export type WorkspaceSearchResults = {
+  projects: WorkspaceSearchProject[];
+  tasks: WorkspaceSearchTask[];
+  error?: string;
+};
+
 export async function ensureWorkspacesTable() {
   await sql`
     CREATE EXTENSION IF NOT EXISTS pgcrypto
@@ -81,6 +106,66 @@ export async function getUserWorkspaces(userId: string) {
   `;
 
   return result as WorkspaceType[];
+}
+
+export async function searchWorkspaceItems(query: string): Promise<WorkspaceSearchResults> {
+  const normalizedQuery = query.trim().slice(0, 100);
+  if (normalizedQuery.length < 2) return { projects: [], tasks: [] };
+
+  const { user } = await getNeonSignedUser();
+  if (!user) return { projects: [], tasks: [] };
+
+  const pattern = `%${normalizedQuery}%`;
+
+  try {
+    const [projectRows, taskRows] = await Promise.all([
+      sql`
+        SELECT p.id, p.name, p.status, p.progress, w.name AS workspace_name
+        FROM projects p
+        INNER JOIN workspaces w ON w.id = p.workspace_id
+        WHERE (
+          w.owner_id = ${user.id}
+          OR EXISTS (
+            SELECT 1
+            FROM workspace_members wm
+            WHERE wm.workspace_id = w.id AND wm.user_id = ${user.id}
+          )
+        )
+          AND (p.name ILIKE ${pattern} OR COALESCE(p.description, '') ILIKE ${pattern})
+        ORDER BY p.updated_at DESC
+        LIMIT 6
+      `,
+      sql`
+        SELECT t.id, t.title, t.status, t.type, t.priority, t.project_id,
+          p.name AS project_name, w.name AS workspace_name
+        FROM tasks t
+        INNER JOIN projects p ON p.id = t.project_id
+        INNER JOIN workspaces w ON w.id = p.workspace_id
+        WHERE (
+          w.owner_id = ${user.id}
+          OR EXISTS (
+            SELECT 1
+            FROM workspace_members wm
+            WHERE wm.workspace_id = w.id AND wm.user_id = ${user.id}
+          )
+        )
+          AND (
+            t.title ILIKE ${pattern}
+            OR COALESCE(t.description, '') ILIKE ${pattern}
+            OR p.name ILIKE ${pattern}
+          )
+        ORDER BY t.updated_at DESC
+        LIMIT 8
+      `,
+    ]);
+
+    return {
+      projects: projectRows as WorkspaceSearchProject[],
+      tasks: taskRows as WorkspaceSearchTask[],
+    };
+  } catch {
+    return { projects: [], tasks: [], error: "Search could not be completed. Try again." };
+  }
 }
 
 export async function getWorkspaceUsers(workspaceId: string) {

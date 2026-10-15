@@ -37,6 +37,16 @@ export async function signInWithEmail(
   redirect("/");
 }
 
+export async function signOut() {
+  const { error } = await auth.signOut();
+
+  if (error) {
+    throw new Error(error.message || "Failed to sign out.");
+  }
+
+  redirect("/login");
+}
+
 export async function signUpWithEmail(
   _prevState: AuthActionState | null,
   formData: FormData

@@ -1,15 +1,20 @@
 "use client"
+import { useEffect, useState, useTransition } from "react"
+import Link from "next/link"
 import type { User } from "@/types/user"
+import { searchWorkspaceItems, type WorkspaceSearchResults } from "@/app/actions/workspace"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { setTheme } from "@/lib/features/theme/themeSlice"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { applyTheme } from "@/lib/utils"
-import { ChevronDown, Moon, Search, Sun } from 'lucide-react'
+import { signOut } from "@/app/actions/auth"
+import { ArrowUpRight, BriefcaseBusiness, ChevronDown, ListTodo, LogOut, Moon, Search, Sun } from 'lucide-react'
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group"
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
@@ -31,6 +36,14 @@ type NavbarProps = {
 const Navbar = ({ user, summary }: NavbarProps) => {
     const dispatch = useAppDispatch();
     const theme = useAppSelector((state) => state.theme.theme);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchResults, setSearchResults] = useState<(WorkspaceSearchResults & { query: string }) | null>(null);
+    const [isPending, startTransition] = useTransition();
+    const normalizedSearchQuery = searchQuery.trim();
+    const currentSearchResults = searchResults?.query === normalizedSearchQuery ? searchResults : null;
+    const showSearchResults = searchOpen && normalizedSearchQuery.length >= 2;
+    const isSearching = normalizedSearchQuery.length >= 2 && (!currentSearchResults || isPending);
     const displayName = user?.name.trim() || "Account";
     const initials = displayName
         .split(/\s+/)
@@ -43,6 +56,35 @@ const Navbar = ({ user, summary }: NavbarProps) => {
         ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(createdAt)
         : "Unavailable";
 
+    useEffect(() => {
+        if (normalizedSearchQuery.length < 2) return;
+
+        let cancelled = false;
+        const timeoutId = window.setTimeout(() => {
+            void searchWorkspaceItems(normalizedSearchQuery)
+                .then((results) => {
+                    if (!cancelled) {
+                        startTransition(() => setSearchResults({ ...results, query: normalizedSearchQuery }));
+                    }
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        startTransition(() => setSearchResults({
+                            projects: [],
+                            tasks: [],
+                            error: "Search could not be completed. Try again.",
+                            query: normalizedSearchQuery,
+                        }));
+                    }
+                });
+        }, 250);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeoutId);
+        };
+    }, [normalizedSearchQuery, startTransition]);
+
     const handleToggle = () => {
         const newTheme = theme === "light" ? "dark" : "light";
         dispatch(setTheme(newTheme));
@@ -50,13 +92,105 @@ const Navbar = ({ user, summary }: NavbarProps) => {
     };
   return (
     <div className="flex items-center justify-between py-4 px-4 md:px-12 flex-1 bg-sidebar">
-        <div>
-            <InputGroup className="max-w-md w-sm">
-                <InputGroupInput placeholder="Search project and tasks" />
+        <div
+            className="relative w-full max-w-md"
+            onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setSearchOpen(false);
+                }
+            }}
+        >
+            <InputGroup>
                 <InputGroupAddon>
-                    <Search />
+                    <Search aria-hidden="true" />
                 </InputGroupAddon>
+                <InputGroupInput
+                    type="search"
+                    aria-label="Search projects and tasks"
+                    aria-controls="navbar-search-results"
+                    aria-expanded={showSearchResults}
+                    autoComplete="off"
+                    placeholder="Search projects and tasks"
+                    value={searchQuery}
+                    onFocus={() => setSearchOpen(true)}
+                    onChange={(event) => {
+                        setSearchQuery(event.target.value);
+                        setSearchOpen(true);
+                    }}
+                    onKeyDown={(event) => {
+                        if (event.key === "Escape") setSearchOpen(false);
+                    }}
+                />
             </InputGroup>
+            {showSearchResults && (
+                <div
+                    id="navbar-search-results"
+                    role="region"
+                    aria-label="Search results"
+                    aria-live="polite"
+                    className="absolute left-0 top-full z-50 mt-2 max-h-[min(70vh,36rem)] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-lg"
+                >
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                        {isSearching
+                            ? "Searching projects and tasks..."
+                            : currentSearchResults?.error
+                                ? currentSearchResults.error
+                                : `${currentSearchResults?.projects.length ?? 0} projects · ${currentSearchResults?.tasks.length ?? 0} tasks`}
+                    </div>
+                    {isSearching ? (
+                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">Searching…</div>
+                    ) : currentSearchResults?.error ? null : currentSearchResults && currentSearchResults.projects.length === 0 && currentSearchResults.tasks.length === 0 ? (
+                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                            No projects or tasks match “{normalizedSearchQuery}”.
+                        </div>
+                    ) : (
+                        <>
+                            {currentSearchResults?.projects.length ? (
+                                <section aria-label="Project matches" className="py-1">
+                                    <h2 className="px-2 py-1 text-xs font-semibold uppercase text-muted-foreground">Projects</h2>
+                                    {currentSearchResults.projects.map((project) => (
+                                        <Link
+                                            key={project.id}
+                                            href={`/project-detail?id=${encodeURIComponent(project.id)}`}
+                                            className="flex items-center gap-3 rounded-sm px-2 py-2 hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                                        >
+                                            <BriefcaseBusiness className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-medium">{project.name}</span>
+                                                <span className="block truncate text-xs text-muted-foreground">
+                                                    {project.workspace_name} · {project.status.replaceAll("_", " ").toLowerCase()} · {project.progress}% complete
+                                                </span>
+                                            </span>
+                                            <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                        </Link>
+                                    ))}
+                                </section>
+                            ) : null}
+                            {currentSearchResults?.tasks.length ? (
+                                <section aria-label="Task matches" className="border-t border-border py-1">
+                                    <h2 className="px-2 py-1 text-xs font-semibold uppercase text-muted-foreground">Tasks</h2>
+                                    {currentSearchResults.tasks.map((task) => (
+                                        <Link
+                                            key={task.id}
+                                            href={`/task-detail?taskId=${encodeURIComponent(task.id)}`}
+                                            className="flex items-center gap-3 rounded-sm px-2 py-2 hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                                        >
+                                            <ListTodo className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-medium">{task.title}</span>
+                                                <span className="block truncate text-xs text-muted-foreground">
+                                                    {task.project_name} · {task.workspace_name} · {task.status.replaceAll("_", " ").toLowerCase()} · {task.priority.toLowerCase()} priority
+                                                </span>
+                                            </span>
+                                            <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                        </Link>
+                                    ))}
+                                </section>
+                            ) : null}
+                        </>
+                    )}
+                </div>
+            )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -153,6 +287,15 @@ const Navbar = ({ user, summary }: NavbarProps) => {
                             )}
                         </section>
                     </div>
+                    <DropdownMenuSeparator />
+                    <form action={signOut}>
+                        <DropdownMenuItem asChild variant="destructive">
+                            <button type="submit" className="w-full">
+                                <LogOut className="h-4 w-4" />
+                                Sign out
+                            </button>
+                        </DropdownMenuItem>
+                    </form>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
