@@ -24,6 +24,8 @@ const priorityTexts = {
     HIGH: { background: "bg-emerald-100 dark:bg-emerald-950", prioritycolor: "text-emerald-600 dark:text-emerald-400" },
 };
 
+const ALL_FILTER_VALUE = "__all_filters__";
+
 const ProjectTasks = ({ tasks }: {tasks: ProjectTasksAndUser[]}) => {
     const router = useRouter();
     const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
@@ -119,14 +121,19 @@ const ProjectTasks = ({ tasks }: {tasks: ProjectTasksAndUser[]}) => {
                     };
                     const selectOptions = options[name] ?? [];
                     return (
-                        <Select key={name} defaultValue={selectOptions[0]?.value ?? ""} name={name} onValueChange={(val) => handleFilterChange(name, val)}>
+                        <Select
+                            key={name}
+                            value={filters[name] || ALL_FILTER_VALUE}
+                            name={name}
+                            onValueChange={(val) => handleFilterChange(name, val === ALL_FILTER_VALUE ? "" : val)}
+                        >
                             <SelectTrigger id={name}>
-                                <SelectValue defaultValue={selectOptions[0]?.value ?? ""} />
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
                                     {selectOptions.map((opt, idx) => (
-                                        <SelectItem key={`${name}-${idx}`} value={opt.value ?? ""}>{opt.label}</SelectItem>
+                                        <SelectItem key={`${name}-${idx}`} value={opt.value ?? ALL_FILTER_VALUE}>{opt.label}</SelectItem>
                                     ))}
                                 </SelectGroup>
                             </SelectContent>

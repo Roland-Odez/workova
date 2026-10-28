@@ -7,6 +7,7 @@ import Link from "next/link";
 import CreateProjectDialog from "./CreateProjectDialog";
 import { getWorkspaceProjects, WorkspaceProject } from "@/app/actions/workspace";
 import { useAppSelector } from "@/lib/hooks";
+import { PROJECTS_UPDATED_EVENT } from "@/lib/project-events";
 import { Skeleton } from "./ui/skeleton";
 
 const statusColors: Record<string, string> = {
@@ -46,6 +47,11 @@ const ProjectOverview = () => {
 
     useEffect(() => {
         void getProjects();
+        const handleProjectsUpdated = () => {
+            void getProjects();
+        };
+        window.addEventListener(PROJECTS_UPDATED_EVENT, handleProjectsUpdated);
+        return () => window.removeEventListener(PROJECTS_UPDATED_EVENT, handleProjectsUpdated);
     }, [getProjects]);
 
     return !loading ? (

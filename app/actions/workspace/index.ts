@@ -236,13 +236,37 @@ export async function getWorkspaceTasks(workspaceId: string) {
 }
 
 export async function addWorkspaceMember(workspaceId: string, email: string, role: "ADMIN" | "MEMBER" = "MEMBER") {
-  const currentUser = await getNeonSignedUser();
-  if (!currentUser.user) return { error: "You must be signed in." };
-  const access = await sql`SELECT EXISTS(SELECT 1 FROM workspaces WHERE id=${workspaceId}::uuid AND owner_id=${currentUser.user.id}::uuid) AS allowed` as { allowed: boolean }[];
-  if (!access[0]?.allowed) return { error: "Only the workspace owner can add members." };
-  const users = await sql`SELECT id FROM neon_auth."user" WHERE lower(email)=lower(${email.trim()})` as { id: string }[];
-  if (!users[0]) return { error: "No account exists for that email yet." };
-  await sql`INSERT INTO workspace_members (workspace_id,user_id,role) VALUES (${workspaceId}::uuid,${users[0].id}::uuid,${role}) ON CONFLICT (workspace_id,user_id) DO UPDATE SET role=EXCLUDED.role`;
-  revalidatePath("/teams");
-  return { success: "Member added to workspace." };
+  try {
+    const currentUser = await getNeonSignedUser();
+    if (!currentUser.user) return { error: currentUser.error || "You must be signed in." };
+
+    const normalizedEmail = email.trim();
+    if (!workspaceId || !normalizedEmail) return { error: "Workspace and email are required." };
+
+    const access = await sql`
+      SELECT EXISTS (
+        SELECT 1
+        FROM workspaces w
+        LEFT JOIN workspace_members wm
+          ON wm.workspace_id = w.id AND wm.user_id = ${currentUser.user.id}::uuid
+        WHERE w.id = ${workspaceId}::uuid
+          AND (w.owner_id = ${currentUser.user.id}::uuid OR wm.role = 'ADMIN')
+      ) AS allowed
+    ` as { allowed: boolean }[];
+    if (!access[0]?.allowed) return { error: "Only workspace owners and admins can add members." };
+
+    const users = await sql`SELECT id FROM neon_auth."user" WHERE lower(email)=lower(${normalizedEmail})` as { id: string }[];
+    if (!users[0]) return { error: "No account exists for that email yet." };
+
+    await sql`
+      INSERT INTO workspace_members (workspace_id, user_id, role)
+      VALUES (${workspaceId}::uuid, ${users[0].id}::uuid, ${role})
+      ON CONFLICT (workspace_id, user_id) DO UPDATE SET role = EXCLUDED.role
+    `;
+    revalidatePath("/teams");
+    return { success: "Member added to workspace." };
+  } catch (error) {
+    console.error("Failed to add workspace member:", error);
+    return { error: "Could not add member. Check the email and workspace permissions, then try again." };
+  }
 }

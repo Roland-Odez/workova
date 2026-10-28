@@ -17,7 +17,7 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 
-export default function InviteMemberDialog() {
+export default function InviteMemberDialog({ onMemberAdded }: { onMemberAdded: () => Promise<void> }) {
   const { selectedWorkspace } = useAppSelector((state) => state.workspace);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -27,16 +27,23 @@ export default function InviteMemberDialog() {
     event.preventDefault();
     if (!selectedWorkspace) return;
     startTransition(async () => {
-      const result = await addWorkspaceMember(
-        selectedWorkspace.id,
-        email,
-        role,
-      );
-      if (result.error) toast.error(result.error);
-      else {
+      try {
+        const result = await addWorkspaceMember(
+          selectedWorkspace.id,
+          email,
+          role,
+        );
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+
+        await onMemberAdded();
         toast.success(result.success);
         setEmail("");
         setOpen(false);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Could not add member.");
       }
     });
   };

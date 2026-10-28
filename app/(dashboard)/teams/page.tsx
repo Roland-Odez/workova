@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useAppSelector } from "@/lib/hooks";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import InviteMemberDialog from "@/components/InviteMemberDialog";
 import { UsersIcon, Search, Shield, Activity } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -21,29 +21,30 @@ const Team = () => {
             user?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    useEffect(() => {
-        async function getProjects(){
-            if (!selectedWorkspace?.id) {
-                setProjects([]);
-                setMembers([]);
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-                const [projects, members] = await Promise
-                .all([getWorkspaceProjects(selectedWorkspace.id),
-                    getWorkspaceUsers(selectedWorkspace.id)])
-                setProjects(projects)
-                setMembers(members)
-            } finally {
-                setLoading(false)
-            }
+    const loadTeamData = useCallback(async () => {
+        if (!selectedWorkspace?.id) {
+            setProjects([]);
+            setMembers([]);
+            setLoading(false);
+            return;
         }
 
-        getProjects()
+        try {
+            setLoading(true);
+            const [workspaceProjects, workspaceMembers] = await Promise.all([
+                getWorkspaceProjects(selectedWorkspace.id),
+                getWorkspaceUsers(selectedWorkspace.id),
+            ]);
+            setProjects(workspaceProjects);
+            setMembers(workspaceMembers);
+        } finally {
+            setLoading(false);
+        }
     }, [selectedWorkspace?.id]);
+
+    useEffect(() => {
+        void loadTeamData();
+    }, [loadTeamData]);
 
     const renderMemberSkeletons = () => (
         <div className="max-w-4xl w-full">
@@ -114,7 +115,7 @@ const Team = () => {
                     </p>
                 </div>
 
-                <InviteMemberDialog />
+                <InviteMemberDialog onMemberAdded={loadTeamData} />
             </div>
 
             {/* Stats Cards */}

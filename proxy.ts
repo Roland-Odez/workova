@@ -1,18 +1,16 @@
-import { auth } from '@/lib/auth/server';
+import { auth } from "@/lib/server";
 
-export default auth.middleware({
-  loginUrl: '/login',
-});
+export default auth.middleware({ loginUrl: "/login" });
 
 export const config = {
   matcher: [
-    /*
-     Match all routes EXCEPT:
-     - /login
-     - /signup
-     - /api (optional but recommended)
-     - static files (_next, images, etc.)
-    */
-    '/((?!login|signup|api|_next|.*\\..*).*)',
+    {
+      source: "/",
+      has: [{ type: "query", key: "neon_auth_session_verifier" }],
+    },
+    {
+      source: "/create-workspace",
+      has: [{ type: "query", key: "neon_auth_session_verifier" }],
+    },
   ],
 };

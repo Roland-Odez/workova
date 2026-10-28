@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { z } from "zod";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 
-import { signInWithEmail } from "@/app/actions/auth";
+import { signInWithEmail, signInWithGoogle } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,16 @@ const LoginForm = () => {
   });
   const [fieldErrors, setFieldErrors] = useState<LoginErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [isGooglePending, startGoogleTransition] = useTransition();
+
+  const handleGoogleSignIn = () => {
+    setGoogleError(null);
+    startGoogleTransition(async () => {
+      const result = await signInWithGoogle();
+      if (result?.error) setGoogleError(result.error);
+    });
+  };
 
   const handleChange = (field: keyof LoginValues, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
@@ -67,11 +77,13 @@ const LoginForm = () => {
           <Button
             className="mb-4 w-full cursor-pointer rounded-sm border border-zinc-300 bg-transparent p-1 text-zinc-900 shadow-md hover:bg-zinc-50 hover:shadow-lg dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
             type="button"
-            disabled={isPending}
+            disabled={isPending || isGooglePending}
+            onClick={handleGoogleSignIn}
           >
             <FcGoogle />
-            <p>Continue with Google</p>
+            <p>{isGooglePending ? "Connecting to Google..." : "Continue with Google"}</p>
           </Button>
+          <FieldError className="mb-3 w-full" errors={googleError ? [{ message: googleError }] : []} />
 
           <div className="mb-3 flex w-full items-center justify-center gap-2">
             <div className="h-px w-full rounded-full bg-zinc-300 dark:bg-zinc-700" />

@@ -19,16 +19,16 @@ async function signedInUser() { const result = await getNeonSignedUser(); if (!r
 async function canAccessProject(userId: string, projectId: string) { const rows = await sql`SELECT EXISTS (SELECT 1 FROM projects p JOIN workspaces w ON w.id=p.workspace_id LEFT JOIN workspace_members wm ON wm.workspace_id=w.id AND wm.user_id=${userId}::uuid WHERE p.id=${projectId}::uuid AND (w.owner_id=${userId}::uuid OR wm.user_id IS NOT NULL)) AS allowed` as { allowed: boolean }[]; return rows[0]?.allowed ?? false; }
 async function requireProjectAccess(projectId: string) { const user = await signedInUser(); if (!(await canAccessProject(user.id, projectId))) throw new Error("You do not have access to this project."); return user; }
 
-export async function create_project(formData: FormData): Promise<ActionResult> {
+export async function create_project(formData: FormData): Promise<ActionResult & { project?: { id: string; name: string } }> {
   try {
     const user = await signedInUser(); const name = optional(formData.get("name")); const workspaceId = optional(formData.get("workspace_id"));
     if (!name || !workspaceId) return { error: "Project name and workspace are required." };
     const access = await sql`SELECT EXISTS(SELECT 1 FROM workspaces w LEFT JOIN workspace_members wm ON wm.workspace_id=w.id AND wm.user_id=${user.id}::uuid WHERE w.id=${workspaceId}::uuid AND (w.owner_id=${user.id}::uuid OR wm.user_id IS NOT NULL)) AS allowed` as { allowed: boolean }[];
     if (!access[0]?.allowed) return { error: "You do not have access to this workspace." };
-    const rows = await sql`INSERT INTO projects (name,description,status,priority,progress,workspace_id,team_lead,start_date,end_date) VALUES (${name},${optional(formData.get("description"))},${optional(formData.get("status")) ?? "PLANNING"},${optional(formData.get("priority")) ?? "MEDIUM"},${Number(formData.get("progress") || 0)},${workspaceId}::uuid,${optional(formData.get("team_lead"))}::uuid,${optional(formData.get("start_date"))}::date,${optional(formData.get("end_date"))}::date) RETURNING id` as { id: string }[];
+    const rows = await sql`INSERT INTO projects (name,description,status,priority,progress,workspace_id,team_lead,start_date,end_date) VALUES (${name},${optional(formData.get("description"))},${optional(formData.get("status")) ?? "PLANNING"},${optional(formData.get("priority")) ?? "MEDIUM"},${Number(formData.get("progress") || 0)},${workspaceId}::uuid,${optional(formData.get("team_lead"))}::uuid,${optional(formData.get("start_date"))}::date,${optional(formData.get("end_date"))}::date) RETURNING id,name` as { id: string; name: string }[];
     const memberIds = [...new Set([...formData.getAll("team_members").map(String), user.id])];
     if (memberIds.length) await sql`INSERT INTO project_members (project_id,user_id) SELECT ${rows[0].id}::uuid,UNNEST(${memberIds}::uuid[]) ON CONFLICT (project_id,user_id) DO NOTHING`;
-    revalidatePath("/"); revalidatePath("/projects"); return { success: "Project created." };
+    revalidatePath("/"); revalidatePath("/projects"); return { success: "Project created.", project: rows[0] };
   } catch (error) { return { error: error instanceof Error ? error.message : "Unable to create project." }; }
 }
 

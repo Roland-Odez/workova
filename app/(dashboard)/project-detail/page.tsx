@@ -7,6 +7,42 @@ import { useRouter } from "next/navigation";
 import CreateTaskDialog from "@/components/CreateTaskDialog";
 import ProjectTasks from "@/components/ProjectTask";
 import { getProjectById, getProjectMembers, getProjectTasksWithUser, ProjectMember, ProjectRecord, ProjectTasksAndUser } from "@/app/actions/project";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function ProjectDetailSkeleton() {
+    return (
+        <div className="space-y-5 max-w-6xl mx-auto" aria-label="Loading project details" aria-busy="true">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="size-7" />
+                    <Skeleton className="h-6 w-48" />
+                </div>
+                <Skeleton className="h-9 w-32" />
+            </div>
+            <div className="grid grid-cols-2 gap-6 sm:flex sm:flex-wrap">
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="flex min-w-40 flex-1 justify-between rounded border border-zinc-200 p-4 dark:border-zinc-800">
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-7 w-12" />
+                        </div>
+                        <Skeleton className="size-4" />
+                    </div>
+                ))}
+            </div>
+            <div className="flex gap-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton key={index} className="h-9 w-24" />
+                ))}
+            </div>
+            <div className="space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        </div>
+    );
+}
 
 export default function ProjectDetail() {
 
@@ -19,18 +55,21 @@ export default function ProjectDetail() {
     const [project, setProject] = useState<ProjectRecord|null>(null);
     const [tasks, setTasks] = useState<ProjectTasksAndUser[]|[]>([]);
     const [members, setMembers] = useState<ProjectMember[]|[]>([])
+    const [loadedProjectId, setLoadedProjectId] = useState<string | null>(null);
     const activeTab = tab ?? "tasks";
     const loadProject = useCallback(async () => {
         if (!id) {
             setProject(null);
             setTasks([]);
             setMembers([]);
+            setLoadedProjectId(null);
             return;
         }
         const [nextProject, nextTasks, nextMembers] = await Promise.all([getProjectById(id), getProjectTasksWithUser(id), getProjectMembers(id)]);
         setProject(nextProject);
         setTasks(nextTasks);
         setMembers(nextMembers);
+        setLoadedProjectId(id);
     }, [id]);
 
     useEffect(() => {
@@ -45,6 +84,10 @@ export default function ProjectDetail() {
         COMPLETED: "bg-blue-200 text-blue-900 dark:bg-blue-500 dark:text-blue-900",
         CANCELLED: "bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900",
     };
+
+    if (id && loadedProjectId !== id) {
+        return <ProjectDetailSkeleton />;
+    }
 
     if (!project) {
         return (

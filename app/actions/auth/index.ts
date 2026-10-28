@@ -3,12 +3,49 @@
 import { createWorkspace } from "../workspace/create";
 import { getNeonSignedUser } from "../user";
 import { auth } from "@/lib/server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 type AuthActionState = {
   error?: string;
   success?: string;
 };
+
+export async function signInWithGoogle(): Promise<AuthActionState | never> {
+  let authorizationUrl: string | undefined;
+
+  try {
+    const requestHeaders = await headers();
+    const requestOrigin = requestHeaders.get("origin");
+
+    if (!requestOrigin) {
+      return { error: "Unable to determine the app URL for Google sign-in." };
+    }
+
+    const appOrigin = new URL(requestOrigin).origin;
+    const { data, error } = await auth.signIn.social({
+      provider: "google",
+      callbackURL: new URL("/", appOrigin).toString(),
+      newUserCallbackURL: new URL("/create-workspace", appOrigin).toString(),
+    });
+
+    if (error) {
+      return { error: error.message || "Unable to start Google sign-in." };
+    }
+
+    authorizationUrl = data?.url ?? undefined;
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Unable to start Google sign-in.",
+    };
+  }
+
+  if (!authorizationUrl) {
+    return { error: "Google sign-in did not return an authorization URL." };
+  }
+
+  redirect(authorizationUrl);
+}
 
 export async function signInWithEmail(
   _prevState: AuthActionState | null,
@@ -38,11 +75,16 @@ export async function signInWithEmail(
 }
 
 export async function signOut() {
-  const { error } = await auth.signOut();
+  let errorMessage: string | undefined;
 
-  if (error) {
-    throw new Error(error.message || "Failed to sign out.");
+  try {
+    const { error } = await auth.signOut();
+    errorMessage = error?.message;
+  } catch (error) {
+    errorMessage = error instanceof Error ? error.message : "Failed to sign out.";
   }
+
+  if (errorMessage) return { error: errorMessage };
 
   redirect("/login");
 }

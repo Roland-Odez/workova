@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { applyTheme } from "@/lib/utils"
 import { signOut } from "@/app/actions/auth"
 import { ArrowUpRight, BriefcaseBusiness, ChevronDown, ListTodo, LogOut, Moon, Search, Sun } from 'lucide-react'
+import { toast } from "sonner"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group"
 import {
     DropdownMenu,
@@ -40,6 +41,7 @@ const Navbar = ({ user, summary }: NavbarProps) => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchResults, setSearchResults] = useState<(WorkspaceSearchResults & { query: string }) | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [isSigningOut, startSignOut] = useTransition();
     const normalizedSearchQuery = searchQuery.trim();
     const currentSearchResults = searchResults?.query === normalizedSearchQuery ? searchResults : null;
     const showSearchResults = searchOpen && normalizedSearchQuery.length >= 2;
@@ -89,6 +91,13 @@ const Navbar = ({ user, summary }: NavbarProps) => {
         const newTheme = theme === "light" ? "dark" : "light";
         dispatch(setTheme(newTheme));
         applyTheme(newTheme);
+    };
+
+    const handleSignOut = () => {
+        startSignOut(async () => {
+            const result = await signOut();
+            if (result?.error) toast.error(result.error);
+        });
     };
   return (
     <div className="flex items-center justify-between py-4 px-4 md:px-12 flex-1 bg-sidebar">
@@ -288,14 +297,10 @@ const Navbar = ({ user, summary }: NavbarProps) => {
                         </section>
                     </div>
                     <DropdownMenuSeparator />
-                    <form action={signOut}>
-                        <DropdownMenuItem asChild variant="destructive">
-                            <button type="submit" className="w-full">
-                                <LogOut className="h-4 w-4" />
-                                Sign out
-                            </button>
-                        </DropdownMenuItem>
-                    </form>
+                    <DropdownMenuItem variant="destructive" disabled={isSigningOut} onSelect={handleSignOut}>
+                        <LogOut className="h-4 w-4" />
+                        {isSigningOut ? "Signing out..." : "Sign out"}
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>

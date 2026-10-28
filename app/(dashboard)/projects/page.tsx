@@ -8,6 +8,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAppSelector } from '@/lib/hooks'
+import { PROJECTS_UPDATED_EVENT } from '@/lib/project-events'
 import { FolderOpen, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -61,6 +62,11 @@ const Projects = () => {
         }
 
         getProjects()
+        const handleProjectsUpdated = () => {
+            void getProjects()
+        }
+        window.addEventListener(PROJECTS_UPDATED_EVENT, handleProjectsUpdated)
+        return () => window.removeEventListener(PROJECTS_UPDATED_EVENT, handleProjectsUpdated)
     }, [selectedWorkspace?.id]);
 
     const renderProjectSkeletons = () => (

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { create_project } from "@/app/actions/project";
@@ -44,10 +45,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAppSelector } from "@/lib/hooks";
+import { PROJECTS_UPDATED_EVENT } from "@/lib/project-events";
 import { Textarea } from "./ui/textarea";
 
 type CreateProjectActionState = {
   error?: string;
+  success?: string;
   project?: {
     id: string;
     name: string;
@@ -58,6 +61,7 @@ type CreateProjectActionState = {
 const initialState: CreateProjectActionState | null = null;
 
 const CreateProjectDialog = () => {
+  const router = useRouter();
   const { selectedWorkspace } = useAppSelector((state) => state.workspace);
   const anchor = useComboboxAnchor();
   const formRef = useRef<HTMLFormElement>(null);
@@ -175,7 +179,9 @@ const CreateProjectDialog = () => {
       setPriority("LOW");
       setTeamLead("no");
       setTeamMembers([]);
+      window.dispatchEvent(new Event(PROJECTS_UPDATED_EVENT));
       setOpen(false);
+      router.refresh();
     }
   }, [state]);
 

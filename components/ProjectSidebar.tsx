@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppSelector } from '@/lib/hooks';
 import { getWorkspaceProjects, WorkspaceProject } from '@/app/actions/workspace';
+import { PROJECTS_UPDATED_EVENT } from '@/lib/project-events';
 
 const ProjectSidebar = () => {
 
@@ -42,6 +43,11 @@ const ProjectSidebar = () => {
         }
 
         void getProjects();
+        const handleProjectsUpdated = () => {
+            void getProjects();
+        };
+        window.addEventListener(PROJECTS_UPDATED_EVENT, handleProjectsUpdated);
+        return () => window.removeEventListener(PROJECTS_UPDATED_EVENT, handleProjectsUpdated);
     }, [selectedWorkspace?.id]);
 
     return (
