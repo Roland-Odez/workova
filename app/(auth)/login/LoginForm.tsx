@@ -145,6 +145,15 @@ const LoginForm = () => {
               <FieldError errors={fieldErrors.password?.map((message) => ({ message }))} />
             </Field>
 
+            <div className="-mt-2 mb-2 flex w-full justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <FieldError className="mb-3" errors={state?.error ? [{ message: state.error }] : []} />
 
             <Button

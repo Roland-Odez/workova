@@ -20,6 +20,12 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Password recovery
+
+Password recovery uses Neon Auth's forgot-password and reset-password UI forms. In Neon Console, enable **Sign-up with Email** under **Settings > Better Auth** and add each app origin to the trusted domains. Reset links expire after 15 minutes. Neon Auth's shared email provider is suitable for development and testing; configure a custom SMTP provider for production.
+
+See Neon Auth's [password reset guide](https://neon.com/docs/auth/guides/password-reset) and [production checklist](https://neon.com/docs/auth/production-checklist) for configuration details.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
