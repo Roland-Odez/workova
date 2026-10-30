@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
-import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap } from "lucide-react";
+import { Bug, CalendarIcon, GitCommit, Square, Trash, XIcon, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TaskStatus } from "@/types";
@@ -15,7 +15,6 @@ const typeIcons = {
     FEATURE: { icon: Zap, color: "text-blue-600 dark:text-blue-400" },
     TASK: { icon: Square, color: "text-green-600 dark:text-green-400" },
     IMPROVEMENT: { icon: GitCommit, color: "text-purple-600 dark:text-purple-400" },
-    OTHER: { icon: MessageSquare, color: "text-amber-600 dark:text-amber-400" },
 };
 
 const priorityTexts = {
@@ -106,7 +105,6 @@ const ProjectTasks = ({ tasks }: {tasks: ProjectTasksAndUser[]}) => {
                             { label: "Bug", value: "BUG" },
                             { label: "Feature", value: "FEATURE" },
                             { label: "Improvement", value: "IMPROVEMENT" },
-                            { label: "Other", value: "OTHER" },
                         ],
                         priority: [
                             { label: "All Priorities", value: null },

@@ -9,7 +9,6 @@ const typeColors = {
     FEATURE: "bg-blue-200 text-blue-800 dark:bg-blue-500 dark:text-blue-900",
     TASK: "bg-green-200 text-green-800 dark:bg-green-500 dark:text-green-900",
     IMPROVEMENT: "bg-purple-200 text-purple-800 dark:bg-purple-500 dark:text-purple-900",
-    OTHER: "bg-amber-200 text-amber-800 dark:bg-amber-500 dark:text-amber-900",
 };
 
 const priorityBorders = {

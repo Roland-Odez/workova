@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GitCommit, MessageSquare, Clock, Bug, Zap, Square } from "lucide-react";
+import { MessageSquare, Clock, Bug, Zap, Square } from "lucide-react";
 import { format } from "date-fns";
 import { getWorkspaceTasks, WorkspaceTask } from "@/app/actions/workspace";
 import { useAppSelector } from "@/lib/hooks";
@@ -11,7 +11,6 @@ const typeIcons: Record<string, { icon: typeof Bug; color: string }> = {
     FEATURE: { icon: Zap, color: "text-blue-500 dark:text-blue-400" },
     TASK: { icon: Square, color: "text-green-500 dark:text-green-400" },
     IMPROVEMENT: { icon: MessageSquare, color: "text-amber-500 dark:text-amber-400" },
-    OTHER: { icon: GitCommit, color: "text-purple-500 dark:text-purple-400" },
 };
 
 const statusColors = {

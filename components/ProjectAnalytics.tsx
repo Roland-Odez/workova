@@ -26,7 +26,7 @@ const ProjectAnalytics = ({tasks, project}: {tasks: Task[], project: Project}) =
         };
 
         const statusMap = { TODO: 0, IN_PROGRESS: 0, DONE: 0 };
-        const typeMap = { TASK: 0, BUG: 0, FEATURE: 0, IMPROVEMENT: 0, OTHER: 0 };
+        const typeMap = { TASK: 0, BUG: 0, FEATURE: 0, IMPROVEMENT: 0 };
         const priorityMap = { LOW: 0, MEDIUM: 0, HIGH: 0 };
 
         tasks.forEach((t) => {
