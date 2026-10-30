@@ -1,6 +1,3 @@
-import { NeonAuthUIProvider } from '@neondatabase/neon-js/auth/react';
-import '@neondatabase/neon-js/ui/css';
-import { authClient } from '@/lib/auth';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -35,7 +32,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       > 
-      <NeonAuthUIProvider emailOTP authClient={authClient}>
         <StoreProvider>
           <ThemeInitializer />
           <TooltipProvider>
@@ -45,7 +41,6 @@ export default function RootLayout({
               </main>
           </TooltipProvider>
         </StoreProvider>
-      </NeonAuthUIProvider>
       </body>
     </html>
   );
